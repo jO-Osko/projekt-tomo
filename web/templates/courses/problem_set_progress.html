@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load extra_filters %}
 
 {% block navigation-left %} 
   <a class="navbar-brand topnav" href="{% url 'course_detail' problem_set.course.pk %}">{{ problem_set.course.title }}</a>
@@ -19,6 +20,16 @@
 <div class="content-section-a tomo-overview-student">
   <div class="container">
     <h2>{{ problem_set.title }}</h2>
+    <div>
+        {% for name, value in progress_filters %}
+            <div class="btn-group btn-group-sm" role="group">
+                <form method="get" action="">
+                    <input type="hidden" name="time_offset" value="{{ value }}">
+                    <button class="btn btn-default btn-for-modal" type="submit">{{ name }}</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
     <div class="row">
       {% for problem in problem_set.problems.all %}
       <div class="col-md-4">
@@ -27,7 +38,7 @@
       <div class="col-md-8">
         <table class="table table-condensed">
           <tbody>
-            {% for observed_user in problem.attempts_by_user %}
+            {% for observed_user in problem.attempts_by_user_partial|call:time_offset %}
             <tr>
               <td>
                 <a href="{% url 'course_progress' problem.problem_set.course.pk observed_user.pk %}"

@@ -3,6 +3,7 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from .models import Course, ProblemSet
+from problems.models import Problem
 from users.models import User
 from utils.views import zip_archive
 from utils import verify
@@ -21,8 +22,14 @@ def problem_set_attempts(request, problem_set_pk):
 def problem_set_progress(request, problem_set_pk):
     problem_set = get_object_or_404(ProblemSet, pk=problem_set_pk)
     verify(request.user.can_view_problem_set_attempts(problem_set))
+    try:
+        time_offset = int(request.GET['time_offset'])
+    except (ValueError, KeyError):
+        time_offset = 0
     return render(request, "courses/problem_set_progress.html", {
         'problem_set': problem_set,
+        'progress_filters': Problem.PROGRESS_FILTERS,
+        'time_offset': time_offset
     })
 
 

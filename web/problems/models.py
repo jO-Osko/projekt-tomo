@@ -26,6 +26,10 @@ class Problem(OrderWithRespectToMixin, models.Model):
     MIMETYPES = {'python': 'text/x-python',
                  'octave': 'text/x-octave',
                  'r': 'text/x-R'}
+    PROGRESS_FILTERS = [('Vse', -1), ('Oddali', 0), ('30 min', 30*60),
+                        ('1 h', 1*60*60), ('2 h', 2*60*60), ('1 teden', 7*24*60*60),
+                        ('1 leto', 365*24*60*60)]
+
     class Meta:
         order_with_respect_to = 'problem_set'
 
@@ -85,6 +89,9 @@ class Problem(OrderWithRespectToMixin, models.Model):
             "authentication_token": authentication_token
         })
         return filename, contents
+
+    def attempts_by_user_partial(self):
+        return lambda time_offset: self.attempts_by_user(time_offset)
 
     def attempts_by_user(self, time_offset=0):
         attempts = {}

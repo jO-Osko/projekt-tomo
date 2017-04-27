@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseRedirect
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
@@ -21,8 +22,16 @@ def problem_set_attempts(request, problem_set_pk):
 def problem_set_progress(request, problem_set_pk):
     problem_set = get_object_or_404(ProblemSet, pk=problem_set_pk)
     verify(request.user.can_view_problem_set_attempts(problem_set))
+    time_offset = int(request.GET.get('time_offset', 0))
+    problems_data = [
+        (problem, [observed_user for observed_user in problem.attempts_by_user(time_offset)])
+        for problem in problem_set.problems.all()
+    ]
     return render(request, "courses/problem_set_progress.html", {
         'problem_set': problem_set,
+        'progress_filters': Course.PROGRESS_FILTERS,
+        'problems': problems_data,
+        'time_offset': time_offset,
     })
 
 
@@ -65,6 +74,9 @@ def problem_set_detail(request, problem_set_pk):
 @login_required
 def course_detail(request, course_pk):
     """Show a list of all problems in a problem set."""
+    if request.method == 'POST':
+        request.session['time_offset_filter'] = int(request.POST.get('time_offset_filter'), 0)
+        return HttpResponseRedirect("")
     course = get_object_or_404(Course, pk=course_pk)
     verify(request.user.can_view_course(course))
     if request.user.can_edit_course(course):
@@ -76,6 +88,7 @@ def course_detail(request, course_pk):
         'course': course,
         'students': students,
         'show_teacher_forms': request.user.can_edit_course(course),
+        'progress_filters': Course.PROGRESS_FILTERS,
     })
 
 

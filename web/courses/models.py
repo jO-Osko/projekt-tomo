@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from django.db import models
+from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
@@ -16,6 +19,10 @@ class Course(models.Model):
     teachers = models.ManyToManyField(User, blank=True, related_name='taught_courses')
     institution = models.CharField(max_length=140)
     tags = TaggableManager(blank=True)
+    PROGRESS_FILTERS = [('Vsi', -1, 'btn-default'), ('Oddali', 0, 'btn-primary'),
+                        ('30 min', 30 * 60, 'btn-success'), ('1 h', 1 * 60 * 60, 'btn-info'),
+                        ('1 dan', 24 * 60 * 60, 'btn-warning'), ('1 teden', 7 * 24 * 60 * 60, 'btn-danger'),
+                        ('1 leto', 365 * 24 * 60 * 60, 'btn-default')]
 
     class Meta:
         ordering = ['institution', 'title']
@@ -90,6 +97,16 @@ class Course(models.Model):
 
     def observed_students(self):
         return User.objects.filter(studentenrollment__course=self, studentenrollment__observed=True)
+
+    def active_students(self, time_offset=0):
+        students = self.observed_students()
+        if time_offset == 0:  # Made an attempt
+            students = students.filter(attempts__part__problem__problem_set__course=self).distinct()
+        elif time_offset > 0:
+            limit_time = now() - timedelta(seconds=time_offset)
+            students = students.filter(attempts__part__problem__problem_set__course=self,
+                                       attempts__added__gte=limit_time).distinct()
+        return students
 
     def student_success(self):
         students = self.observed_students()

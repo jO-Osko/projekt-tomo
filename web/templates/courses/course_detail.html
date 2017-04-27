@@ -64,6 +64,18 @@
           {% endfor %}
         </ul>
         <hr>
+        <div>
+          {% for name, value, class in progress_filters %}
+            <div class="btn-group btn-group-sm" role="group">
+              <form method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="time_offset_filter" value="{{ value }}">
+                <button class="btn {{ class }} btn-for-modal {% if request.session.time_offset_filter == value %}active{% endif %}" type="submit">{{ name }}</button>
+              </form>
+            </div>
+          {% endfor %}
+          </div>
+        <hr>
         <ul class="tomo-students">
           {% for student in students %}
             <li>

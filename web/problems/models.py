@@ -1,10 +1,13 @@
 from copy import deepcopy
 import json
+from datetime import timedelta
+
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
+from django.utils.timezone import now
 from rest_framework.authtoken.models import Token
 from simple_history.models import HistoricalRecords
 from utils import is_json_string_list, truncate
@@ -86,7 +89,7 @@ class Problem(OrderWithRespectToMixin, models.Model):
         })
         return filename, contents
 
-    def attempts_by_user(self, active_only=True):
+    def attempts_by_user(self, time_offset=0):
         attempts = {}
         for part in self.parts.all():
             for attempt in part.attempts.all():
@@ -98,8 +101,12 @@ class Problem(OrderWithRespectToMixin, models.Model):
             if student not in attempts:
                 attempts[student] = {}
         observed_students = self.problem_set.course.observed_students()
-        if active_only:
+        if time_offset == 0:
             observed_students = observed_students.filter(attempts__part__problem=self).distinct()
+        else:
+            limit_time = now() - timedelta(seconds=time_offset)
+            observed_students = observed_students.filter(attempts__part__problem=self, attempts__added__gte=limit_time)
+            # TODO: Add filter by time_last_solved
         observed_students = list(observed_students)
         for user in observed_students:
             user.valid = user.invalid = user.empty = 0

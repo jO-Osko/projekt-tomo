@@ -1,0 +1,15 @@
+FROM postgres:9.6.10
+
+# Set locales
+RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL sl_SI.UTF-8
+
+RUN apt-get install -y locales
+RUN sed -i "/^# sl_SI.UTF-8 UTF-8/ c sl_SI.UTF-8 UTF-8" /etc/locale.gen
+RUN locale-gen
+RUN update-locale
+
+# Set superuser role
+COPY ./create_fixtures.sql /docker-entrypoint-initdb.d/create_fixtures.sql
